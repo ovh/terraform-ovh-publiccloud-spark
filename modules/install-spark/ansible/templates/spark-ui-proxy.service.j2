@@ -1,0 +1,16 @@
+[Unit]
+Description=spark ui proxy
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+User=centos
+Restart=on-failure
+RestartSec=10s
+Environment=SPARK_MASTER_HOST=localhost
+Environment=SPARK_MASTER_PORT=8080
+Environment=SPARK_UI_PROXY_PORT=9999
+ExecStart=/bin/sh -c "/usr/bin/python {{spark_link_dir}}/sbin/spark-ui-proxy.py $SPARK_MASTER_HOST:$SPARK_MASTER_PORT $SPARK_UI_PROXY_PORT"
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,15 @@
+[Unit]
+Description=spark master
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+User=centos
+Restart=on-failure
+Environment=SPARK_NO_DAEMONIZE=1
+Environment=SPARK_MASTER_HOST=127.0.0.1
+Environment=SPARK_LOCAL_IP=127.0.0.1
+ExecStart={{spark_link_dir}}/sbin/start-master.sh
+
+[Install]
+WantedBy=multi-user.target

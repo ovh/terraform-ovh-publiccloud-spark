@@ -1,0 +1,15 @@
+[Unit]
+Description=spark slave
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+User=centos
+Restart=on-failure
+Environment=SPARK_NO_DAEMONIZE=1
+Environment=SPARK_MASTER_URL=spark://spark-master.service.consul:7077
+Environment=SPARK_LOCAL_IP=127.0.0.1
+ExecStart=/opt/spark/sbin/start-slave.sh $SPARK_MASTER_URL
+
+[Install]
+WantedBy=multi-user.target

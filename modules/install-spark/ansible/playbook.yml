@@ -1,0 +1,240 @@
+---
+- hosts: all
+
+  vars:
+    spark_version     : '2.2.0'
+    spark_hadoop_ver  : hadoop2.7
+    spark_mirror_url  : http://mirrors.sonic.net/apache/spark
+    spark_sha256sum   : 97fd2cc58e08975d9c4e4ffa8d7f8012c0ac2792bcd9945ce2a561cf937aebcc
+    spark_parent_dir  : /opt
+    spark_timeout     : 10
+    spark_cleanup     : True
+    spark_name        : spark-{{spark_version}}
+    spark_hadoop_name : '{{spark_name}}-bin-{{spark_hadoop_ver}}'
+    spark_tgz         : '{{spark_hadoop_name}}.tgz'
+
+    # http://apache.claz.org/spark/spark-2.1.0/spark-2.1.0-bin-hadoop2.7.tgz
+    spark_url : '{{spark_mirror_url}}/{{spark_name}}/{{spark_tgz}}'
+
+    spark_target_dir : '{{spark_parent_dir}}/{{spark_hadoop_name}}'
+    spark_link_dir   : '{{spark_parent_dir}}/spark'
+    with_python_ml   : True
+    with_spark_ui_proxy : True
+    with_nvidia_cuda : True
+
+  tasks:
+
+    ## installs spark
+    - name: installs spark required packages...
+      become: yes
+      become_user: root
+      yum:
+        name: '{{item}}'
+        state: latest
+      with_items:
+        - java-1.8.0-openjdk-headless
+        - rsync
+
+    - name : create spark parent dir...
+      become: yes
+      become_user: root
+      file:
+        path: '{{spark_parent_dir}}'
+        state: directory
+        mode: 0755
+
+    - name: download spark...
+      become: yes
+      become_user: root
+      get_url:
+        url: '{{spark_url}}'
+        dest: /tmp/{{spark_tgz}}
+        mode: 0644
+        checksum: 'sha256:{{spark_sha256sum}}'
+        timeout: '{{spark_timeout}}'
+
+    - name: unarchive spark....
+      become: yes
+      become_user: root
+      unarchive:
+        remote_src: yes
+        dest: '{{spark_parent_dir}}'
+        src: /tmp/{{spark_tgz}}
+        owner: centos
+        group: centos
+        creates: '{{spark_target_dir}}'
+
+    - name: link spark...
+      become: yes
+      become_user: root
+      file:
+        src: '{{spark_target_dir}}'
+        dest: '{{spark_link_dir}}'
+        state: link
+
+    - name: include spark in the default path...
+      become: yes
+      become_user: root
+      template:
+        src: '{{item.f}}.j2'
+        dest: '{{item.d}}/{{item.f}}'
+        mode: '{{item.m}}'
+      with_items:
+        - f: spark.sh
+          d: /etc/profile.d
+          m: '0644'
+        - f: spark.env
+          d: '{{spark_target_dir}}'
+          m: '0644'
+
+    - name : create spark logs dir...
+      become: yes
+      become_user: root
+      file:
+        path: '{{spark_target_dir}}/logs'
+        owner: centos
+        group: centos
+        state: directory
+        mode: 0755
+
+    - name: Download spark-ui-proxy
+      when: with_spark_ui_proxy
+      become: yes
+      become_user: root
+      get_url:
+        url: https://raw.githubusercontent.com/aseigneurin/spark-ui-proxy/master/spark-ui-proxy.py
+        dest: '{{spark_target_dir}}/sbin'
+        owner: centos
+        group: centos
+        mode: 0440
+
+    - name: include spark-ui-proxy systemd service...
+      when: with_spark_ui_proxy
+      become: yes
+      become_user: root
+      template:
+        src: '{{item}}.j2'
+        dest: '/etc/systemd/system/{{item}}'
+        mode: '0644'
+      with_items:
+        - spark-ui-proxy.service
+
+    - name: include spark systemd services...
+      become: yes
+      become_user: root
+      template:
+        src: '{{item}}.j2'
+        dest: '/etc/systemd/system/{{item}}'
+        mode: '0644'
+      with_items:
+        - spark-master.service
+        - spark-slave.service
+
+    - name: create spark systemd services dropin dir...
+      become: yes
+      become_user: root
+      file:
+        path: '/etc/systemd/system/{{item}}.d'
+        owner: root
+        group: root
+        state: directory
+        mode: 0755
+      with_items:
+        - spark-master.service
+        - spark-slave.service
+        
+      ## disable firewalld
+      ## TODO: add a firewalld spark.xml config instead
+    - name: disable service firewalld
+      become: yes
+      become_user: root
+      systemd:
+        name: firewalld
+        enabled: no
+        masked: yes
+        state: stopped
+
+    ## installs python & ML libs
+    - name: installs python required packages...
+      when: with_python_ml
+      become: yes
+      become_user: root
+      yum:
+        name: '{{item}}'
+        state: latest
+      with_items:
+        - python
+        - python-pip
+
+    - name: installs python required libraires...
+      when: with_python_ml
+      become: yes
+      become_user: root
+      pip:
+        name: '{{item}}'
+      with_items:
+        - numpy
+
+
+    - name: installs required deps for nvidia cuda support
+      when: with_nvidia_cuda
+      become: yes
+      become_user: root
+      yum:
+        name: '{{item}}'
+        state: latest
+      with_items:
+        - gcc
+
+    - name: Download cuda repo
+      when: with_nvidia_cuda
+      become: yes
+      become_user: root
+      get_url:
+        url: http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-9.0.176-1.x86_64.rpm
+        dest: '/tmp'
+        owner: centos
+        group: centos
+        mode: 0440
+        checksum: md5:960afa71b11da89980990736c77e0495
+
+    - name: update packages
+      become: yes
+      become_user: root
+      yum:
+        name: '*'
+        state: latest
+
+
+    - name: installs cuda repo
+      when: with_nvidia_cuda
+      become: yes
+      become_user: root
+      yum:
+        name: '{{item}}'
+        state: present
+        disable_gpg_check: yes
+      with_items:
+        - /tmp/cuda-repo-rhel7-9.0.176-1.x86_64.rpm
+
+    - name: installs cuda
+      when: with_nvidia_cuda
+      become: yes
+      become_user: root
+      yum:
+        name: '{{item}}'
+        state: present
+      with_items:
+        - cuda
+
+      ## clean up
+    - name: cleanup...
+      become: yes
+      become_user: root
+      when: spark_cleanup
+      file:
+        path: '{{item}}'
+        state: absent
+      with_items:
+        - '/tmp/{{spark_tgz}}'
+        - /tmp/cuda-repo-rhel7-9.0.176-1.x86_64.rpm

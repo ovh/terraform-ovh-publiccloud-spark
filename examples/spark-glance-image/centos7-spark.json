@@ -1,0 +1,31 @@
+{
+    "min_packer_version": "0.12.0",
+    "variables": {
+        "identity_endpoint": "{{env `OS_AUTH_URL`}}",
+        "region": "{{env `OS_REGION_NAME`}}",
+        "ext_net_id": "",
+        "spark_version": "2.2.0",
+        "spark_sha256sum": "97fd2cc58e08975d9c4e4ffa8d7f8012c0ac2792bcd9945ce2a561cf937aebcc"
+    },
+    "builders": [
+        {
+            "type": "openstack",
+            "identity_endpoint": "{{user `identity_endpoint`}}",
+            "region": "{{user `region`}}",
+            "ssh_username": "centos",
+            "image_name": "Centos 7 Spark",
+            "source_image_name": "Centos 7",
+            "ssh_ip_version": "4",
+            "flavor": "s1-2",
+            "networks": ["{{user `ext_net_id`}}"]
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "ansible",
+            "ansible_env_vars": [ "ANSIBLE_HOST_KEY_CHECKING=False", "ANSIBLE_SSH_ARGS='-o ForwardAgent=yes -o ControlMaster=auto -o ControlPersist=60s'", "ANSIBLE_NOCOLOR=True" ],
+            "extra_arguments": [ "--extra-vars", "spark_version={{user `spark_version`}} spark_sha256sum={{user `spark_sha256sum`}}" ],
+            "playbook_file": "../../modules/install-spark/ansible/playbook.yml"
+        }
+    ]
+}
