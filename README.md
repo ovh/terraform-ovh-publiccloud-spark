@@ -13,7 +13,7 @@ This setup is suitable for temporary or development apache spark standalone clus
 module "spark_cluster" {
   source = "ovh/publiccloud-spark/ovh"
   name         = "myspark_cluster"
-  count        = 3
+  slaves_count = 3
   cidr         = "10.2.0.0/16"
   network_id   = "xxx"
   subnet_id    = "yyy"
