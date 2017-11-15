@@ -20,7 +20,7 @@ NOTES:
 * As of today, Openstack users created by the script have admin permissions on the openstack tenant. You want to be very precautionnous with the credentials associated with this user.
 * Once the spark job is successfull, it may have written its output in the container, alongside with the dataset.
 * Once the spark job is successfull and you have retrieved its output, you have to apply a `terraform destroy` command to tear down all the OVH Public Cloud resources.
-* You may want to refer to the [network module](https://github.com/ovh/terraform-ovh-publiccloud-spark) to see how to associate a VRack to your project, use a preexisting network, spawn the cluster in a specific VLAN ID, ...
+* You may want to refer to the [network module](https://github.com/ovh/terraform-ovh-publiccloud-network) to see how to associate a VRack to your project, use a preexisting network, spawn the cluster in a specific VLAN ID, ...
 
 Usage
 =====

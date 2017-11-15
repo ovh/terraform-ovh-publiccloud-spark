@@ -1,6 +1,6 @@
 # Apache Spark Standalone Cluster OVH Public Cloud Module
 
-This repo contains a Module for how to deploy an [Apache Spark](https://spark.apache.org/) standalone cluster on [OVH Public Cloud](https://ovhcloud.com/) using [Terraform](https://www.terraform.io/). Spark is a ???
+This repo contains a Module for how to deploy an [Apache Spark](https://spark.apache.org/) standalone cluster on [OVH Public Cloud](https://ovhcloud.com/) using [Terraform](https://www.terraform.io/). Apache Spark™ is a fast and general engine for large-scale data processing.
 
 ## Important Note
 
