@@ -11,7 +11,7 @@ This setup is suitable for temporary or development apache spark standalone clus
 
 ```hcl
 module "spark_cluster" {
-  source = "terraform-ovh-modules/publiccloud_spark/ovh"
+  source = "ovh/publiccloud-spark/ovh"
   name         = "myspark_cluster"
   count        = 3
   cidr         = "10.2.0.0/16"
