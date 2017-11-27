@@ -53,4 +53,4 @@ This module was originally based on the [terraform-aws-consul module](https://gi
 
 ## License
 
-OVH Licensed. See [LICENSE](https://github.com/ovh/terraform-ovh-publiccloud-spark/tree/master/LICENSE) for full details.
+The 3-Clause BSD License. See [LICENSE](https://github.com/ovh/terraform-ovh-publiccloud-spark/tree/master/LICENSE) for full details.
